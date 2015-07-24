@@ -12,6 +12,7 @@ import android.widget.Button;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import com.android.volley.VolleyError;
 import com.augylabs.volleyloader.Callback;
 import com.augylabs.volleyloader.VolleyLoader;
 import com.augylabs.volleyloader.VolleyLoaderManager;
@@ -33,8 +34,13 @@ public class MyActivity extends AppCompatActivity implements Callback<List<Issue
     public void onFailure(Exception ex) {
 
         setProgressBarIndeterminateVisibility(false);
+        Throwable throwable = ex.getCause();
+        if (throwable instanceof VolleyError) {
+            VolleyError volleyError = (VolleyError) throwable;
+            Toast.makeText(this, "Error: " + volleyError.networkResponse.statusCode, Toast.LENGTH_LONG).show();
+        }
 
-        Toast.makeText(this, "Error: " + ex.getMessage(), Toast.LENGTH_LONG).show();
+
         if (swipeView != null) {
             swipeView.setRefreshing(false);
         }
@@ -87,7 +93,7 @@ public class MyActivity extends AppCompatActivity implements Callback<List<Issue
             @Override
             public void onClick(View view) {
                 IssuesLoader loader = new IssuesLoader(MyActivity.this, gitHubService);
-                VolleyLoaderManager.init(getSupportLoaderManager(), 0, loader, MyActivity.this);
+                VolleyLoaderManager.init(getSupportLoaderManager(), 0, loader, MyActivity.this, true);
             }
         });
         swipeView = (SwipeRefreshLayout) findViewById(R.id.swipe);
@@ -98,7 +104,7 @@ public class MyActivity extends AppCompatActivity implements Callback<List<Issue
                 swipeView.setRefreshing(true);
                 IssuesLoader loader = new IssuesLoader(MyActivity.this, gitHubService);
 
-                VolleyLoaderManager.init(getSupportLoaderManager(), 0, loader, MyActivity.this);
+                VolleyLoaderManager.init(getSupportLoaderManager(), 0, loader, MyActivity.this, true);
                 Log.d("Swipe", "Refreshing Number");
                 (new Handler()).postDelayed(new Runnable() {
                     @Override
@@ -110,7 +116,7 @@ public class MyActivity extends AppCompatActivity implements Callback<List<Issue
         });
 
 
-        VolleyLoaderManager.reconnect(getSupportLoaderManager(), 0, this);
+        VolleyLoaderManager.reconnect(getSupportLoaderManager(), 0, this, true);
     }
 
     static class IssuesLoader extends VolleyLoader<List<Issue>, GitHub> {
@@ -124,6 +130,8 @@ public class MyActivity extends AppCompatActivity implements Callback<List<Issue
         public List<Issue> call(GitHub service) throws ExecutionException, InterruptedException {
 
             Log.d("IssuesLoader", "call");
+
+            Thread.sleep(2000);
 
             return service.listRetrofitIssues();
         }

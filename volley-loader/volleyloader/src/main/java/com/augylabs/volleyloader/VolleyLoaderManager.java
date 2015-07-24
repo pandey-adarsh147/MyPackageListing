@@ -9,7 +9,7 @@ import android.support.v4.content.Loader;
  */
 public class VolleyLoaderManager {
     public static <D, R> void init(final LoaderManager manager, final int loaderId,
-                                   final VolleyLoader<D, R> loader, final Callback<D> callback) {
+                                   final VolleyLoader<D, R> loader, final Callback<D> callback, final boolean keepLoader) {
 
         manager.initLoader(loaderId, Bundle.EMPTY, new LoaderManager.LoaderCallbacks<Response<D>>() {
 
@@ -21,6 +21,9 @@ public class VolleyLoaderManager {
 
             @Override
             public void onLoadFinished(Loader<Response<D>> loader, Response<D> data) {
+                if (!keepLoader) {
+                    manager.destroyLoader(loaderId);
+                }
 
                 if (data.hasError()) {
 
@@ -72,11 +75,11 @@ public class VolleyLoaderManager {
         });
     }
 
-    public static <D, R> void reconnect(final LoaderManager manager, final int loaderId, final Callback<D> callback) {
+    public static <D, R> void reconnect(final LoaderManager manager, final int loaderId, final Callback<D> callback, final boolean keepLoader) {
 
         VolleyLoader<D, R> preLoader = (VolleyLoader) manager.getLoader(loaderId);
         if (preLoader != null && (!preLoader.isAbandoned() || !preLoader.isReset())) {
-            init(manager, loaderId, preLoader, callback);
+            init(manager, loaderId, preLoader, callback, keepLoader);
         }
 
     }
